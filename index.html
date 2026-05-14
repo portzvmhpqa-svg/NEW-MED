@@ -1,889 +1,540 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>情绪处方笺 - 数字化中医交互系统</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
-
     <style>
-
         :root {
-
             --ink-black: #1a1a1a;
-
             --cinnabar: #d92d20;
-
-            --jade: #3a5f5d;
-
             --bg-color: #fdfdfd;
-
         }
-
-
 
         body {
-
             font-family: 'Noto Serif SC', serif;
-
             background: var(--bg-color);
-
-            overflow: hidden;
-
+            overflow-x: hidden;
             height: 100vh;
-
             color: var(--ink-black);
-
             transition: background 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-
+            -webkit-tap-highlight-color: transparent;
         }
-
-
 
         .glass {
-
-            background: rgba(255, 255, 255, 0.5);
-
-            backdrop-filter: blur(25px);
-
-            -webkit-backdrop-filter: blur(25px);
-
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-
         }
-
-
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
-
         .font-brush { font-family: 'Zhi Mang Xing', cursive; }
 
-
-
-        /* 粒子背景 */
-
         #ink-canvas {
-
             position: fixed;
-
             top: 0;
-
             left: 0;
-
             width: 100%;
-
             height: 100%;
-
             z-index: -1;
-
-            opacity: 0.6;
-
+            opacity: 0.4;
         }
-
-
 
         .nav-active {
-
             color: var(--ink-black);
-
             font-weight: 900;
-
-            background: radial-gradient(circle at bottom, rgba(0,0,0,0.05) 0%, transparent 70%);
-
+            position: relative;
         }
-
-
-
-        /* 列表动画 */
-
-        .fade-in { animation: fadeIn 0.8s ease forwards; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-
-
-        /* Threads 风格样式 */
-
-        .thread-card {
-
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-
-            padding: 1.5rem 0;
-
-        }
-
-        .thread-avatar {
-
-            width: 36px; height: 36px;
-
-            background: #eee;
-
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--cinnabar);
             border-radius: 50%;
-
-            flex-shrink: 0;
-
         }
 
+        #main-compass {
+            width: 65vw;
+            height: 65vw;
+            max-width: 280px;
+            max-height: 280px;
+        }
+
+        .calculating {
+            animation: compassSpin 2s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        @keyframes compassSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(1440deg); }
+        }
+
+        .seal {
+            width: 50px; height: 50px;
+            border: 2px solid var(--cinnabar);
+            color: var(--cinnabar);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            transform: rotate(-15deg);
+        }
+
+        .vert-title {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .wiki-section-header {
+            border-left: 3px solid var(--ink-black);
+            padding-left: 1rem;
+            margin: 2rem 0 1rem 0;
+        }
+
+        .view-container {
+            height: 100vh;
+            overflow-y: auto;
+            padding-bottom: 120px;
+        }
+
+        /* 辟谣项样式 */
+        .rumor-card {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1rem 0;
+        }
+        .rumor-q {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .rumor-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-out;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .rumor-card.active .rumor-a {
+            max-height: 300px;
+            margin-top: 10px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .rumor-card.active .chevron {
+            transform: rotate(180deg);
+        }
     </style>
-
 </head>
-
 <body class="flex flex-col">
-
-
 
     <canvas id="ink-canvas"></canvas>
 
-
-
-    <!-- 顶部导航 -->
-
-    <nav class="fixed top-0 left-0 right-0 h-24 z-[1000] flex items-center justify-between px-12">
-
-        <div class="flex items-center gap-3">
-
-            <div class="w-10 h-10 border-2 border-black flex items-center justify-center font-brush text-2xl">拾</div>
-
-            <span class="text-lg font-black tracking-widest">情绪处方笺</span>
-
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-16 z-[1000] flex items-center justify-between px-6 bg-white/60 backdrop-blur-md border-b border-black/5">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 border-2 border-black flex items-center justify-center font-brush text-xl bg-white shadow-sm">拾</div>
+            <span class="text-xs font-black tracking-[0.2em] opacity-80">情绪处方笺</span>
         </div>
+        <div id="nav-time" class="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">00:00:00</div>
+    </header>
 
-        <div class="glass px-8 py-2 rounded-full flex gap-10">
-
-            <button id="nav-diag" onclick="switchView('diag')" class="nav-active text-sm tracking-widest px-4 py-1 transition-all">心神诊断</button>
-
-            <button id="nav-wiki" onclick="switchView('wiki')" class="text-sm tracking-widest text-gray-400 hover:text-black px-4 py-1 transition-all">方志百科</button>
-
-            <button id="nav-comm" onclick="switchView('comm')" class="text-sm tracking-widest text-gray-400 hover:text-black px-4 py-1 transition-all">同修共济</button>
-
+    <!-- Nav Bottom -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-md">
+        <div class="glass py-4 px-10 rounded-full flex justify-between items-center shadow-2xl border border-white/50">
+            <button id="nav-diag" onclick="switchView('diag')" class="nav-active text-[11px] tracking-widest">诊断</button>
+            <button id="nav-wiki" onclick="switchView('wiki')" class="text-[11px] tracking-widest text-gray-400">百科</button>
+            <button id="nav-comm" onclick="switchView('comm')" class="text-[11px] tracking-widest text-gray-400">同修</button>
         </div>
-
-        <div id="nav-time" class="text-xs font-bold font-mono text-gray-500 w-24 text-right">00:00:00</div>
-
     </nav>
 
-
-
-    <!-- 视图 1：心神诊断 -->
-
-    <main id="view-diag" class="fixed inset-0 pt-32 overflow-y-auto no-scrollbar flex flex-col items-center">
-
-        <div class="w-full max-w-6xl flex flex-col items-center px-8 pb-32">
-
-            <section class="w-full grid grid-cols-1 lg:grid-cols-2 gap-20 my-16 items-center">
-
-                <div class="space-y-8">
-
-                    <div class="inline-block px-4 py-1 border border-black text-[10px] font-bold tracking-widest rounded-sm">数字化中医实验室</div>
-
-                    <h1 class="text-6xl font-serif font-black leading-tight">消解内耗的<br><span class="font-brush text-7xl">水墨良方</span></h1>
-
-                    <p class="text-base text-gray-600 leading-relaxed max-w-md">融合<b>“五志论”</b>与<b>“子午流注”</b>，将古法智慧具象为数字化心神调理系统，为你此时此刻的情绪状态“对症下药”。</p>
-
-                </div>
-
-                <div class="relative flex flex-col items-center">
-
-                    <div id="main-compass" class="glass w-80 h-80 rounded-full flex items-center justify-center relative transition-transform duration-[3000ms] ease-in-out">
-
-                        <!-- 子午流注刻度通过JS生成 -->
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-
-            <div class="glass p-12 rounded-[4rem] w-full max-w-4xl flex flex-col items-center">
-
-                <h2 class="text-xl font-black tracking-[0.3em] mb-12">此时心境为何？</h2>
-
-                <div class="grid grid-cols-5 gap-10 w-full">
-
-                    <button onclick="selectEmotion('anger', '#e6f4ea')" class="flex flex-col items-center group">
-
-                        <div id="icon-anger" class="w-20 h-20 bg-white/40 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-all font-brush text-3xl">怒</div>
-
-                        <span class="text-[10px] mt-4 opacity-40 font-bold tracking-widest">木 / 青</span>
-
-                    </button>
-
-                    <button onclick="selectEmotion('joy', '#fde8e8')" class="flex flex-col items-center group">
-
-                        <div id="icon-joy" class="w-20 h-20 bg-white/40 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-all font-brush text-3xl text-red-700">喜</div>
-
-                        <span class="text-[10px] mt-4 opacity-40 font-bold tracking-widest">火 / 赤</span>
-
-                    </button>
-
-                    <button onclick="selectEmotion('worry', '#fffbeb')" class="flex flex-col items-center group">
-
-                        <div id="icon-worry" class="w-20 h-20 bg-white/40 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-all font-brush text-3xl text-amber-800">思</div>
-
-                        <span class="text-[10px] mt-4 opacity-40 font-bold tracking-widest">土 / 黄</span>
-
-                    </button>
-
-                    <button onclick="selectEmotion('sorrow', '#f3f4f6')" class="flex flex-col items-center group">
-
-                        <div id="icon-sorrow" class="w-20 h-20 bg-white/40 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-all font-brush text-3xl text-gray-500">忧</div>
-
-                        <span class="text-[10px] mt-4 opacity-40 font-bold tracking-widest">金 / 白</span>
-
-                    </button>
-
-                    <button onclick="selectEmotion('fear', '#f1f5f9')" class="flex flex-col items-center group">
-
-                        <div id="icon-fear" class="w-20 h-20 bg-white/40 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-all font-brush text-3xl text-slate-800">恐</div>
-
-                        <span class="text-[10px] mt-4 opacity-40 font-bold tracking-widest">水 / 黑</span>
-
-                    </button>
-
-                </div>
-
-                <button id="btn-submit" onclick="showResult()" class="hidden mt-16 px-16 py-5 bg-red-700 text-white rounded-sm font-black text-sm tracking-[0.5em] shadow-2xl hover:scale-105 active:scale-95 transition-all">生成处方</button>
-
-            </div>
-
+    <!-- View: Diagnosis -->
+    <main id="view-diag" class="view-container mt-16 no-scrollbar flex flex-col items-center px-6">
+        <div class="w-full pt-8 text-center mb-10">
+            <h1 class="text-4xl font-serif font-black leading-tight mb-2">消解内耗的<br><span class="font-brush text-5xl">水墨良方</span></h1>
+            <p class="text-[9px] text-gray-400 tracking-[0.4em] uppercase">Digital TCM Emotion Care</p>
         </div>
 
+        <div class="relative flex flex-col items-center mb-12">
+            <div id="main-compass" class="glass rounded-full flex items-center justify-center relative shadow-inner">
+                <!-- Shi-chen marks will be generated here -->
+            </div>
+        </div>
+
+        <div class="glass p-8 rounded-[2.5rem] w-full mb-10">
+            <h2 class="text-[10px] font-black tracking-[0.3em] mb-10 text-center text-gray-400 uppercase">此刻心境何如？</h2>
+            <div class="grid grid-cols-3 gap-8">
+                <button onclick="selectEmotion('anger', '#e6f4ea')" class="flex flex-col items-center">
+                    <div id="icon-anger" class="w-14 h-14 bg-white border border-black/5 rounded-full flex items-center justify-center transition-all font-brush text-xl shadow-sm">怒</div>
+                    <span class="text-[9px] mt-2 font-bold opacity-30">木 / 肝</span>
+                </button>
+                <button onclick="selectEmotion('joy', '#fde8e8')" class="flex flex-col items-center">
+                    <div id="icon-joy" class="w-14 h-14 bg-white border border-black/5 rounded-full flex items-center justify-center transition-all font-brush text-xl text-red-700 shadow-sm">喜</div>
+                    <span class="text-[9px] mt-2 font-bold opacity-30">火 / 心</span>
+                </button>
+                <button onclick="selectEmotion('worry', '#fffbeb')" class="flex flex-col items-center">
+                    <div id="icon-worry" class="w-14 h-14 bg-white border border-black/5 rounded-full flex items-center justify-center transition-all font-brush text-xl text-amber-800 shadow-sm">思</div>
+                    <span class="text-[9px] mt-2 font-bold opacity-30">土 / 脾</span>
+                </button>
+                <button onclick="selectEmotion('sorrow', '#f3f4f6')" class="flex flex-col items-center">
+                    <div id="icon-sorrow" class="w-14 h-14 bg-white border border-black/5 rounded-full flex items-center justify-center transition-all font-brush text-xl text-gray-500 shadow-sm">忧</div>
+                    <span class="text-[9px] mt-2 font-bold opacity-30">金 / 肺</span>
+                </button>
+                <button onclick="selectEmotion('fear', '#f1f5f9')" class="flex flex-col items-center">
+                    <div id="icon-fear" class="w-14 h-14 bg-white border border-black/5 rounded-full flex items-center justify-center transition-all font-brush text-xl text-slate-800 shadow-sm">恐</div>
+                    <span class="text-[9px] mt-2 font-bold opacity-30">水 / 肾</span>
+                </button>
+            </div>
+            
+            <div class="mt-10">
+                <button id="btn-submit" onclick="startDiagnosis()" class="hidden w-full bg-black text-white rounded-full font-black text-[12px] tracking-[0.4em] py-4 shadow-xl active:scale-95 transition-all">生成处方</button>
+            </div>
+        </div>
     </main>
 
-
-
-    <!-- 视图 2：方志百科 -->
-
-    <main id="view-wiki" class="fixed inset-0 pt-32 hidden opacity-0 transition-all duration-500 overflow-y-auto no-scrollbar pb-32">
-
-        <div class="max-w-5xl mx-auto px-8">
-
-            <h2 class="text-6xl font-brush mb-16">方志百科</h2>
-
-           
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-
-                <!-- 食 -->
-
-                <div class="glass p-12 rounded-[3rem] space-y-6">
-
-                    <div class="flex justify-between items-start">
-
-                        <h3 class="text-2xl font-black italic">食·五味归经章</h3>
-
-                        <span class="font-brush text-6xl opacity-10">食</span>
-
-                    </div>
-
-                    <p class="text-sm text-gray-500 leading-relaxed">审四时之气，察五味之偏。春宜省酸增甘，养脾气；夏减苦增辛，宣肺卫；秋忌辛增酸，敛肝阴；冬去咸增苦，固肾精。</p>
-
-                    <div class="bg-black/5 p-6 rounded-2xl">
-
-                        <p class="font-bold text-xs mb-2">今日典例：山药百合粥</p>
-
-                        <p class="text-[10px] text-gray-400">怀山药30克、百合15克、粳米50克。文火慢煨四刻，米融为胶。尤适思虑过重、夜寐不安者。</p>
-
-                    </div>
-
-                </div>
-
-                <!-- 息 -->
-
-                <div class="glass p-12 rounded-[3rem] space-y-6">
-
-                    <div class="flex justify-between items-start">
-
-                        <h3 class="text-2xl font-black italic">息·吐纳导引章</h3>
-
-                        <span class="font-brush text-6xl opacity-10">息</span>
-
-                    </div>
-
-                    <p class="text-sm text-gray-500 leading-relaxed">一呼一吸，沟通内外。春嘘（xū）明目，夏呵（hē）清心，秋呬（sì）润肺，冬吹（chuī）固肾，四季常呼（hū）理脾土。</p>
-
-                    <div class="flex gap-2">
-
-                        <span class="px-2 py-1 bg-black text-white text-[10px]">嘘</span>
-
-                        <span class="px-2 py-1 bg-black text-white text-[10px]">呵</span>
-
-                        <span class="px-2 py-1 bg-black text-white text-[10px]">呼</span>
-
-                        <span class="px-2 py-1 bg-black text-white text-[10px]">呬</span>
-
-                        <span class="px-2 py-1 bg-black text-white text-[10px]">吹</span>
-
-                    </div>
-
-                </div>
-
-                <!-- 动 -->
-
-                <div class="glass p-12 rounded-[3rem] space-y-6">
-
-                    <div class="flex justify-between items-start">
-
-                        <h3 class="text-2xl font-black italic">动·导引柔筋章</h3>
-
-                        <span class="font-brush text-6xl opacity-10">动</span>
-
-                    </div>
-
-                    <p class="text-sm text-gray-500 leading-relaxed">导引之要，在“形动如柳，意静如岳”。仿鹿昂首激活甲状腺，仿鹿探草拉伸督脉。</p>
-
-                    <div class="border-l-2 border-black pl-4 text-xs italic text-gray-500">科学注：鹿戏动作刺激迷走神经，降低皮质醇水平。</div>
-
-                </div>
-
-                <!-- 静 -->
-
-                <div class="glass p-12 rounded-[3rem] space-y-6">
-
-                    <div class="flex justify-between items-start">
-
-                        <h3 class="text-2xl font-black italic">静·守神养志章</h3>
-
-                        <span class="font-brush text-6xl opacity-10">静</span>
-
-                    </div>
-
-                    <p class="text-sm text-gray-500 leading-relaxed">春观花以怡情，夏听雨而涤烦。观肺似霜钟，白气肃杀涤尘埃；念肾同玄冰，黑光沉潜蓄真元。</p>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- 四象圆融图 -->
-
-            <div class="glass p-12 rounded-[4rem] mb-32 bg-black text-white text-center">
-
-                <h4 class="font-brush text-4xl mb-12">食息动静四象圆融图</h4>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs tracking-widest">
-
-                    <div class="space-y-2"><b>春生</b><br>晨食粥·嘘息动·鹿戏升阳</div>
-
-                    <div class="space-y-2"><b>夏长</b><br>午呵息·导引柔·观莲静心</div>
-
-                    <div class="space-y-2"><b>秋收</b><br>暮呬息·登高动·钟鸣凝神</div>
-
-                    <div class="space-y-2"><b>冬藏</b><br>夜吹息·走罐动·冰鉴守志</div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- 辟谣板块 -->
-
-            <h4 class="text-4xl font-brush mb-12">中医药辟谣手册</h4>
-
-            <div id="debunk-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-32">
-
-                <!-- 由 JS 填充 30 条内容 -->
-
-            </div>
-
+    <!-- View: Encyclopedia (百科升级) -->
+    <main id="view-wiki" class="view-container mt-16 hidden opacity-0 transition-all duration-500 px-6">
+        <h2 class="text-5xl font-brush text-center py-10">方志百科</h2>
+        
+        <div id="wiki-main-content">
+            <!-- Content built from user text -->
         </div>
 
+        <!-- 辟谣板块 -->
+        <div class="mt-16 mb-20">
+            <h3 class="text-3xl font-brush text-center mb-8">中医药辟谣</h3>
+            <p class="text-[10px] text-gray-400 text-center mb-6 tracking-widest">—— 理性守护生命智慧 ——</p>
+            <div id="rumor-list" class="space-y-1"></div>
+            
+            <div class="mt-10 p-6 bg-black text-white rounded-2xl">
+                <h4 class="text-xs font-black mb-4 tracking-[0.2em]">终极辟谣心法</h4>
+                <ul class="text-[10px] space-y-3 opacity-80 leading-relaxed">
+                    <li>❶ 警惕“包治百病”话术：中医精髓在辨证论治。</li>
+                    <li>❷ 破除“非黑即白”思维：中西医各有所长。</li>
+                    <li>❸ 远离“神化/妖魔化”陷阱：信权威机构，查药典。</li>
+                </ul>
+            </div>
+        </div>
     </main>
 
-
-
-    <!-- 视图 3：同修共济 (Threads 风格) -->
-
-    <main id="view-comm" class="fixed inset-0 pt-32 hidden opacity-0 transition-all duration-500 overflow-y-auto no-scrollbar flex flex-col items-center">
-
-        <div class="w-full max-w-2xl px-6 pb-32">
-
-            <div class="flex flex-col mb-12">
-
-                <h2 class="text-3xl font-black mb-2">同修共济</h2>
-
-                <p class="text-sm text-gray-400">此时此刻，与 1,208 位心友共振脉络</p>
-
+    <!-- View: Community -->
+    <main id="view-comm" class="view-container mt-16 hidden opacity-0 transition-all duration-500 px-6">
+        <div class="py-8">
+            <div class="flex justify-between items-end mb-10">
+                <h2 class="text-3xl font-serif font-black">同修共济</h2>
+                <span class="text-[10px] text-gray-400">2,481 位同修在线</span>
             </div>
-
-            <div id="threads-container" class="space-y-0">
-
-                <!-- 由 JS 填充 20 条评论 -->
-
-            </div>
-
+            <div id="threads-container" class="space-y-4"></div>
         </div>
-
     </main>
 
-
-
-    <!-- 处方单弹出层 (保持不变) -->
-
-    <section id="stage-result" class="hidden fixed inset-0 z-[2000] overflow-y-auto glass p-8 flex flex-col items-center">
-
-        <!-- 保持原有结构，仅确保中文显示 -->
-
-        <div class="w-full max-w-6xl mt-12 mb-32">
-
-            <button onclick="closeResult()" class="mb-12 text-xs font-bold border-b border-black">返回诊断</button>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-                <div class="lg:col-span-4 space-y-8">
-
-                    <div class="glass p-10 rounded-[3rem]">
-
-                        <p class="text-[10px] font-bold text-red-700 tracking-widest mb-6">病理溯源分析</p>
-
-                        <h2 id="res-title" class="text-4xl font-brush mb-8">--</h2>
-
-                        <div id="res-science" class="text-sm text-gray-600 leading-relaxed space-y-6"></div>
-
+    <!-- Prescription Result Overlay -->
+    <section id="stage-result" class="hidden fixed inset-0 z-[2000] bg-white overflow-y-auto no-scrollbar">
+        <!-- Result content as previously styled but optimized for mobile -->
+        <div class="min-h-screen flex flex-col p-8 pb-24">
+            <div class="flex justify-between items-start mb-12">
+                <div class="flex gap-4">
+                    <div class="vert-title font-brush text-3xl border-r-2 border-black pr-3">处方笺</div>
+                    <div>
+                        <h2 id="res-title" class="text-4xl font-black leading-tight">--</h2>
+                        <p class="text-[10px] text-gray-400 mt-2 font-mono" id="res-date">2024.XX.XX</p>
                     </div>
-
                 </div>
-
-                <div class="lg:col-span-8 glass p-12 rounded-[4rem]">
-
-                    <h3 class="text-sm font-bold text-gray-400 tracking-[0.4em] mb-16">数字化调理处方笺</h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-
-                        <div class="glass p-8 rounded-3xl"><h5 class="font-black mb-2">🍵 食疗建议</h5><p id="res-food-title" class="text-sm">--</p></div>
-
-                        <div class="glass p-8 rounded-3xl"><h5 class="font-black mb-2">🌬️ 调息功法</h5><p id="res-breath-title" class="text-sm">--</p></div>
-
-                        <div class="glass p-8 rounded-3xl"><h5 class="font-black mb-2">🖖 经络疏通</h5><p id="res-move-title" class="text-sm">--</p></div>
-
-                        <div class="glass p-8 rounded-3xl"><h5 class="font-black mb-2">🧘 守神观想</h5><p id="res-still-title" class="text-sm">--</p></div>
-
-                    </div>
-
-                </div>
-
+                <div class="seal">验</div>
             </div>
-
+            <div id="res-body" class="space-y-8 flex-1">
+                <!-- Data populated by JS -->
+            </div>
+            <button onclick="closeResult()" class="mt-12 w-full bg-white border-2 border-black py-4 rounded-full font-black text-xs tracking-[0.3em] active:bg-black active:text-white transition-all">返回调理</button>
         </div>
-
     </section>
 
-
+    <!-- Thinking Overlay -->
+    <div id="thinking-overlay" class="hidden fixed inset-0 z-[3000] bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center p-12 text-center">
+        <div id="thinking-compass" class="w-56 h-56 border-2 border-black/5 rounded-full flex items-center justify-center relative mb-10">
+            <div class="absolute inset-0 border-t-2 border-black rounded-full animate-spin"></div>
+            <div class="font-brush text-4xl" id="thinking-status">辨证中</div>
+        </div>
+        <p class="text-[11px] font-black tracking-[0.5em] text-gray-500 uppercase leading-relaxed">子午流注心神演算中<br>请静候气机流转</p>
+    </div>
 
     <script>
-
-        // 核心数据
-
+        // Data Structures
         const SHICHENS = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+        
+        const WIKI_CONTENT = [
+            {
+                title: "食 · 五味归经章",
+                subtitle: "饮食有节",
+                content: "审四时之气，察五味之偏。春宜省酸增甘，养脾气；夏减苦增辛，宣肺卫；秋忌辛增酸，敛肝阴；冬去咸增苦，固肾精。五谷为养，五果为助，食疗之道在“时节入箸，阴阳入味”。",
+                example: "今日典例：山药百合粥",
+                details: "· 配伍：怀山药30克（健脾益肾）、百合15克（宁心安神）、粳米50克、枸杞5克（滋肝明目）<br>· 火候：文火慢煨四刻，米融为胶<br>· 现代鉴真：山药粘多糖增强肠道免疫，百合秋水仙碱调节神经递质。"
+            },
+            {
+                title: "息 · 吐纳导引章",
+                subtitle: "呼吸为纲",
+                content: "一呼一吸，沟通内外。春嘘（xū）明目，夏呵（hē）清心，秋呬（sì）润肺，冬吹（chuī）固肾，四季常呼（hū）理脾土。音波调气如涟漪荡浊。",
+                example: "练习：五音吐纳法",
+                details: "· 角音（肝）：发“嘘——”声，疏解郁气<br>· 徵音（心）：发“呵——”音，导火下行<br>· 宫音（脾）：发“呼——”，助运化<br>· 商音（肺）：发“呬——”，肃降肺金<br>· 羽音（肾）：发“吹——”，引水归源"
+            },
+            {
+                title: "动 · 导引柔筋章",
+                subtitle: "形与神俱",
+                content: "导引之要，在“形动如柳，意静如岳”，八段锦、五禽戏皆形神共炼之法。",
+                example: "今日功法：鹿戏导引术",
+                details: "1. 仿鹿昂首：踮脚伸颈，激活甲状腺<br>2. 仿鹿探草：俯身弓背，拉伸督脉<br>3. 仿鹿蹬蹄：单腿后蹬，协调小脑"
+            },
+            {
+                title: "静 · 守神养志章",
+                subtitle: "恬淡为宗",
+                content: "守神之道，贵在“外离诸相，内息诸妄”，站桩、正念皆凝神守一之径。",
+                example: "修习：四季观想冥想",
+                details: "· 春：肝如嫩柳（青气）<br>· 夏：存心若红莲（清凉）<br>· 秋：肺似霜钟（肃杀）<br>· 冬：肾同玄冰（沉潜）"
+            }
+        ];
 
-        const ORGANS = ["胆", "肝", "肺", "大肠", "胃", "脾", "心", "小肠", "膀胱", "肾", "心包", "三焦"];
+        const RUMORS = [
+            ["中药纯天然=绝对安全无害？", "错！是药三分毒。国家药监局统计显示，关木通含马兜铃酸可致肾损伤，何首乌过量引发肝毒性案例频发。安全用药核心是遵医嘱、控剂量、定期查肝肾功能。"],
+            ["喝中药必须忌所有“辛辣”？", "需看情况！辣椒、花椒等辛温食物：适合风寒感冒服麻黄汤时助发汗；忌口皮肤脓肿服清热解毒药时防加重热毒。"],
+            ["把脉能100%诊断疾病？", "脉诊只是辅助！中医诊断需“望闻问切”四诊合参。不要神化单一诊断手段。"],
+            ["儿童感冒喝小柴胡颗粒更安全？", "误区！柴胡含柴胡皂苷，过量可能伤肝。儿童用药无论中西，必须严格按体重计算剂量。"],
+            ["偏方“蜈蚣泡酒”能治关节炎？", "危险操作！蜈蚣含溶血毒素，曾有患者致肾衰竭。动物类药材需专业炮制。"],
+            ["阿胶必须用驴皮，其他皮无效？", "《中国药典》规定阿胶原料为驴皮，但马、猪皮胶也有滋阴作用，驴皮非唯一选择。"],
+            ["中药煎煮越久越浓越好？", "可能毁药！薄荷、藿香煮10分钟即效；山豆根久煎反增毒性。"],
+            ["“冬吃萝卜夏吃姜”适合所有人？", "看体质！脾胃虚寒者宜，湿热体质（舌苔黄腻）夏吃姜易上火。"],
+            ["酸梅汤包治上火？", "夸大其词！酸梅汤适阴虚，实火需用黄连上清片。长期上火需查糖水平。"],
+            ["药膳养生人人可吃？", "风险！黄芪鸡汤致血压飙升，当归活血可能诱发月经量多，药膳每周不超2次。"],
+            ["中药抗癌可替代化疗？", "延误治疗！中药辅助缓解副作用疗效佳，但抑瘤效果远弱于现代医学。"],
+            ["痛经就喝红糖姜水？", "对证才有效！适寒性痛经，热性痛经越喝越痛。辨体质为先。"],
+            ["刮痧越痛越黑效果越好？", "可能损伤！出痧以微红为度，暴力可能致皮肤感染，糖尿病患者慎用。"],
+            ["中药治慢性病必须吃一辈子？", "动态调整！稳定后可逐步减量。中药是“调理-稳定-减药”的过程。"],
+            ["红枣补血治贫血？", "不够力！铁含量极低。贫血对策：动物肝脏+维C。"],
+            ["穴位按摩能治近视？", "无法逆转！真性近视是眼轴变形。按摩仅能缓解眼疲劳。"],
+            ["酸枣仁茶治失眠人人有效？", "分证型！适心肝血虚型，痰热型不适。长期失眠排查焦虑症。"],
+            ["中药减肥茶可随意喝？", "警惕泻剂！含番泻叶致结肠黑变病。健康减重靠热量缺口。"],
+            ["中药能根治乙肝？", "目前不能！中药可改善肝功，清除病毒需抗病毒药。切忌停药！"],
+            ["药酒养生越陈越好？", "风险！储存超5年乌头碱毒性增加。自制药酒封存应小于2年。"]
+        ];
+
+        const THREADS = [
+            { user: "青灯不归客", content: "坚持喝山药百合粥半个月了，之前总是胡思乱想睡不着，现在心静了许多，胃口也开了。", color: "#fef2f2" },
+            { user: "橘子汽水", content: "那个鹿戏导引术真的很神奇，每天在办公室拉伸一下，颈椎那个响声小了很多，同事都问我在练什么。", color: "#ecfdf5" },
+            { user: "北冥有鱼", content: "看到辟谣板块说红枣不补血我惊呆了，赶紧给妈妈看了，她现在开始吃猪肝配青椒了哈哈。", color: "#fffbeb" },
+            { user: "本草同修_882", content: "其实辟谣最重要的一点就是遵医嘱。我以前自己乱喝蒲公英水喝得拉肚子，看了这里的解释才明白是伤了胃。", color: "#f8fafc" },
+            { user: "墨染山河", content: "有人一起打八段锦吗？每天卯时（早上6点）在线打卡，为了这身正气拼了！", color: "#f5f3ff" }
+        ];
 
         const EMOTIONS = {
-
-            anger: { title: "疏肝解郁方", science: "肝主怒。若你感到愤懑，常因‘木气不舒’。按压太冲穴可引火下行，玫瑰清香可助条达木性。", food: "玫瑰白芍饮", breath: "角调 · 缓呼长吸", move: "太冲穴", still: "赤足立于草木间" },
-
-            joy: { title: "宁心固神方", science: "喜伤心。神散而不收。通过‘徵调’平顺血脉，使散乱之心神归位，化虚亢为定力。", food: "百合莲子清心汤", breath: "徵调 · 平稳鼻息", move: "神门穴", still: "合目内观心火" },
-
-            worry: { title: "理中健脾方", science: "思伤脾。思考过度则气结于中。以‘宫调’厚土之音化解执念，使气机周流。", food: "陈皮山药健脾散", breath: "宫调 · 腹式深息", move: "足三里", still: "静听土音钟磬" },
-
-            sorrow: { title: "宣肺解忧方", science: "忧伤肺。悲则气消，肺叶不张。利用金石之音宣发肺气，如云雾消散，重现清朗心境。", food: "雪梨川贝润肺露", breath: "商调 · 开胸重吸", move: "合谷穴", still: "远眺空旷之处" },
-
-            fear: { title: "固肾定惊方", science: "恐伤肾。气陷而不举。以此水润之方纳气归根，稳固下焦，消除无名之惊恐。", food: "黑芝麻益智饮", breath: "羽调 · 潜纳深息", move: "涌泉穴", still: "稳坐如磐石" }
-
+            anger: { title: "疏肝解郁方", science: "肝主怒，性喜条达。郁则化火。此方引火下行，以清香化积。", food: "玫瑰白芍饮", breath: "角调 · 缓呼长吸", move: "太冲穴", still: "赤足立于草木间", caution: "忌子时熬夜，避免辛辣刺激。" },
+            joy: { title: "宁心固神方", science: "喜伤心，气涣而不收。此方平顺血脉，化虚亢为定力。", food: "百合莲子清心汤", breath: "徵调 · 平稳鼻息", move: "神门穴", still: "合目内观心火", caution: "保持情绪稳定，少食兴奋性饮品。" },
+            worry: { title: "理中健脾方", science: "思伤脾，气结于中。以厚土之音化解执念，健运脾胃。", food: "陈皮山药健脾散", breath: "宫调 · 腹式深息", move: "足三里", still: "静听土音钟磬", caution: "规律饮食，少食生冷，避免久坐。" },
+            sorrow: { title: "宣肺解忧方", science: "忧伤肺，气消而不张。利用金石之音宣发，如云开月明。", food: "雪梨川贝润肺露", breath: "商调 · 开胸重吸", move: "合谷穴", still: "远眺空旷之处", caution: "多晒太阳，参与集体活动，忌封闭。" },
+            fear: { title: "固肾定惊方", science: "恐伤肾，气陷而不举。此方纳气归根，稳固下焦，重塑安全感。", food: "黑芝麻益智饮", breath: "羽调 · 潜纳深息", move: "涌泉穴", still: "稳坐如磐石", caution: "注意下肢保暖，避免惊悚视听刺激。" }
         };
 
-
-
-        const DEBUNKS = [
-
-            ["中药纯天然=绝对安全无害？", "错！是药三分毒。马兜铃酸、何首乌过量案例频发。安全核心是遵医嘱、控剂量。"],
-
-            ["喝中药必须忌所有“辛辣”？", "需看情况！风寒感冒服药时辣椒可助发汗；但皮肤脓肿服清热药时需忌口。"],
-
-            ["把脉能100%诊断疾病？", "脉诊只是辅助。中医讲究望闻问切“四诊合参”，不应神化单一手段。"],
-
-            ["把脉能看胎儿性别？", "这属于民间神化。虽然脉象会有滑脉表现，但准确率受医生经验和体质干扰，医学上不支持作为唯一依据。"],
-
-            ["儿童感冒喝中药比西药安全？", "误区！柴胡含皂苷过量伤肝，儿童用药必须严格按体重计算。"],
-
-            ["偏方“蜈蚣泡酒”能治关节炎？", "危险操作！蜈蚣含溶血毒素，土法炮制易致肾衰竭。"],
-
-            ["阿胶必须用驴皮？", "传统工艺以驴皮为主，马皮等熬制的叫黄明胶，虽功效略异但也非毫无价值。"],
-
-            ["中药煎煮越久越好？", "薄荷藿香久煮效失，山豆根久煮增毒。解表药快煎，滋补药慢熬。"],
-
-            ["冬吃萝卜夏吃姜适合所有人？", "湿热体质者夏季吃姜易上火。谚语需辨证应用。"],
-
-            ["中药注射液不安全？", "部分不安全，但急救类如参附注射液不可替代。原则是能口服不输液。"],
-
-            ["酸梅汤包治上火？", "适合阴虚火旺（口干），实火（牙龈肿）需用黄连。"],
-
-            ["药膳养生人人可吃？", "黄芪鸡汤可能致血压飙升。药膳每周不宜超2次。"],
-
-            ["中药渣倒路口去病根？", "封建迷信，除了绊倒路人没有实际作用。"],
-
-            ["中药抗癌可替代化疗？", "延误治疗！中药主要是减毒增效，直接抑瘤弱于现代医学。"],
-
-            ["痛经就喝红糖姜水？", "寒性痛经有效，热性痛经（经血紫红）越喝越痛。"],
-
-            ["蒲公英茶天天喝？", "苦寒伤胃，长期喝易致腹泻。"],
-
-            ["名医秘方网上公开卖？", "99%骗局！凡宣称“根治”绝症的均为虚假宣传。"],
-
-            ["中西药必须间隔2小时？", "非绝对，具体需看药物相互作用。咨询药师最稳。"],
-
-            ["舌苔越厚毒越多？", "提示消化问题，但不是单纯“排毒”指标。"],
-
-            ["刮痧越痛越黑越好？", "出痧微红即可，暴力刮痧易伤表皮。"],
-
-            ["中草药没有副作用？", "误区。很多植物含有天然生物碱，长期服用有肾毒性。"],
-
-            ["红枣补血神药？", "铁含量低且吸收率差，远不如猪肝。"],
-
-            ["穴位按摩治近视？", "仅能缓解疲劳，无法逆转眼轴变形。"],
-
-            ["酸枣仁茶人人有效？", "只适合血虚型失眠，痰热型无效。"],
-
-            ["减肥茶可随意喝？", "警惕番泻叶成分导致的结肠黑变病。"],
-
-            ["三伏贴包治呼吸病？", "对寒性哮喘有效，花粉过敏无效。"],
-
-            ["中药能根治乙肝？", "不能清除病毒，只能保护肝功能。"],
-
-            ["药酒越陈越好？", "封存超5年毒性可能增加。建议不超2年。"],
-
-            ["保健品当药吃？", "阿胶糕属食品，认准药品“国药准字”。"],
-
-            ["中药粉碎冲服更好？", "矿物药如石膏需久煎才有效，冲服无效。"]
-
-        ];
-
-
-
-        const COMMENTS = [
-
-            "刚做完‘忧’的处方，雪梨川贝露真的润，心情像被洗过一样。",
-
-            "有没有心友试过鹿戏？我颈椎疼了半个月，练了三天确实松了点。",
-
-            "山药百合粥确实是思虑过重者的救星，晨起空腹一碗，胃暖心安。",
-
-            "把‘怒’点开，那个青色的背景晕染出来的一瞬间，感觉气顺了一半。",
-
-            "数字化中医有点意思，至少让我在焦虑的时候有个抓手。",
-
-            "三十条辟谣建议收藏，家里长辈天天在群里发偏方，正好反驳。",
-
-            "子午流注这个概念以前看不懂，这里用罗盘旋转表现很直观。",
-
-            "‘喜伤心’原来是真的，最近太兴奋确实感觉心慌气短。",
-
-            "为什么我测出来的总是‘思’？看来真的该放下工作去站桩了。",
-
-            "刚才听了宫调的音频，那种厚重的声音真的能让心沉下来。",
-
-            "呼—— 呼—— 呼—— 跟着球呼吸很有节奏感。",
-
-            "现在的年轻人真的太需要这个了，比看心理医生亲切。",
-
-            "那个磨砂玻璃的质感配水墨，简直是审美巅峰。",
-
-            "有人一起云站桩吗？每天晚上亥时集合。",
-
-            "中医不是避世，是入世的智慧，一粥一息皆是修行。",
-
-            "辟谣第15条：蒲公英茶别乱喝，我喝了一周拉肚子拉虚脱了。",
-
-            "阿胶那个确实，现在好驴皮太贵了，黄明胶也是个选择。",
-
-            "希望以后能加一个‘五音’的实时播放列表。",
-
-            "收藏了四象圆融图，打算打印出来贴在办公室。",
-
-            "养正于常。共勉。"
-
-        ];
-
-
-
+        // Initialize App
         let currentSelected = null;
-
-        let particles = [];
-
         const canvas = document.getElementById('ink-canvas');
-
         const ctx = canvas.getContext('2d');
 
-
-
-        // 初始化
-
         function init() {
-
-            window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-
-            for(let i=0; i<40; i++) particles.push(new Particle());
-
-           
-
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            
+            // Build Compass Marks
             const compass = document.getElementById('main-compass');
-
             for(let i=0; i<12; i++) {
-
                 const el = document.createElement('div');
-
-                el.className = 'absolute text-[10px] font-bold text-gray-300';
-
-                el.style.transform = `rotate(${i * 30}deg) translateY(-120px)`;
-
-                el.innerText = `${SHICHENS[i]}·${ORGANS[i]}`;
-
+                el.className = 'absolute text-[9px] font-bold text-gray-400';
+                el.style.transform = `rotate(${i * 30}deg) translateY(-110px)`;
+                el.innerText = SHICHENS[i];
                 compass.appendChild(el);
-
             }
 
-
-
-            // 填充辟谣
-
-            const debunkList = document.getElementById('debunk-list');
-
-            DEBUNKS.forEach(item => {
-
-                const card = document.createElement('div');
-
-                card.className = 'glass p-8 rounded-3xl hover:bg-white/80 transition-all cursor-default fade-in';
-
-                card.innerHTML = `<h5 class="font-black mb-2 text-sm">❓ ${item[0]}</h5><p class="text-xs text-gray-500 leading-relaxed">💡 ${item[1]}</p>`;
-
-                debunkList.appendChild(card);
-
-            });
-
-
-
-            // 填充评论
-
-            const commContainer = document.getElementById('threads-container');
-
-            COMMENTS.forEach((txt, i) => {
-
-                const card = document.createElement('div');
-
-                card.className = 'thread-card fade-in';
-
-                card.innerHTML = `
-
-                    <div class="flex gap-4">
-
-                        <div class="thread-avatar"></div>
-
-                        <div class="flex-1">
-
-                            <div class="flex justify-between items-center mb-1">
-
-                                <span class="text-xs font-bold">心友_${Math.floor(Math.random()*9000+1000)}</span>
-
-                                <span class="text-[10px] text-gray-300">${i+1}小时前</span>
-
-                            </div>
-
-                            <p class="text-sm text-gray-700 leading-relaxed mb-3">${txt}</p>
-
-                            <div class="flex gap-4 items-center">
-
-                                <button onclick="this.classList.toggle('text-red-500')" class="text-xs text-gray-400 hover:scale-110 transition-transform">❤ ${Math.floor(Math.random()*100)}</button>
-
-                                <button class="text-xs text-gray-400">💬 ${Math.floor(Math.random()*20)}</button>
-
-                            </div>
-
-                        </div>
-
+            // Build Wiki Content
+            const wikiContainer = document.getElementById('wiki-main-content');
+            WIKI_CONTENT.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'mb-12';
+                div.innerHTML = `
+                    <div class="wiki-section-header">
+                        <h4 class="text-xl font-black">${item.title}</h4>
+                        <p class="text-[10px] text-gray-400 tracking-widest">${item.subtitle}</p>
                     </div>
-
+                    <p class="text-xs leading-relaxed mb-4 text-gray-600">${item.content}</p>
+                    <div class="bg-gray-100/50 p-5 rounded-2xl border-l-4 border-black">
+                        <p class="text-[11px] font-bold mb-2">${item.example}</p>
+                        <p class="text-[10px] leading-relaxed opacity-70">${item.details}</p>
+                    </div>
                 `;
-
-                commContainer.appendChild(card);
-
+                wikiContainer.appendChild(div);
             });
 
+            // Build Rumors
+            const rumorList = document.getElementById('rumor-list');
+            RUMORS.forEach((r, idx) => {
+                const div = document.createElement('div');
+                div.className = 'rumor-card';
+                div.innerHTML = `
+                    <div class="rumor-q" onclick="toggleRumor(this)">
+                        <span>❓ ${r[0]}</span>
+                        <svg class="chevron w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="rumor-a">💡 ${r[1]}</div>
+                `;
+                rumorList.appendChild(div);
+            });
 
+            // Build Community
+            const threads = document.getElementById('threads-container');
+            THREADS.forEach(t => {
+                const card = document.createElement('div');
+                card.style.backgroundColor = t.color;
+                card.className = 'p-6 rounded-3xl shadow-sm border border-black/5';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center font-brush text-lg border border-black/10">${t.user[0]}</div>
+                        <div>
+                            <p class="text-[11px] font-black">${t.user}</p>
+                            <p class="text-[8px] opacity-40">来自 华夏大地</p>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed text-gray-700">${t.content}</p>
+                `;
+                threads.appendChild(card);
+            });
 
             updateClock();
-
             setInterval(updateClock, 1000);
-
-            animateCanvas();
-
+            animateInk();
         }
 
-
-
-        // 水墨粒子逻辑
-
-        class Particle {
-
-            constructor() { this.reset(); }
-
-            reset() {
-
-                this.x = Math.random() * canvas.width;
-
-                this.y = Math.random() * canvas.height;
-
-                this.vx = (Math.random() - 0.5) * 0.4;
-
-                this.vy = (Math.random() - 0.5) * 0.4;
-
-                this.size = Math.random() * 100 + 50;
-
-                this.opacity = Math.random() * 0.08;
-
-            }
-
-            update() {
-
-                this.x += this.vx; this.y += this.vy;
-
-                if(this.x < -150 || this.x > canvas.width + 150) this.vx *= -1;
-
-                if(this.y < -150 || this.y > canvas.height + 150) this.vy *= -1;
-
-            }
-
-            draw() {
-
-                ctx.beginPath();
-
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-
-                ctx.fillStyle = `rgba(0,0,0,${this.opacity})`;
-
-                ctx.fill();
-
-            }
-
+        // Interaction Logic
+        function toggleRumor(el) {
+            const card = el.parentElement;
+            const isActive = card.classList.contains('active');
+            document.querySelectorAll('.rumor-card').forEach(c => c.classList.remove('active'));
+            if (!isActive) card.classList.add('active');
         }
-
-
-
-        function animateCanvas() {
-
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-
-            particles.forEach(p => { p.update(); p.draw(); });
-
-            requestAnimationFrame(animateCanvas);
-
-        }
-
-
-
-        function selectEmotion(type, color) {
-
-            currentSelected = type;
-
-            document.body.style.backgroundColor = color;
-
-            document.getElementById('btn-submit').classList.remove('hidden');
-
-            document.querySelectorAll('[id^="icon-"]').forEach(el => el.style.border = "none");
-
-            document.getElementById(`icon-${type}`).style.border = "2px solid black";
-
-        }
-
-
 
         function switchView(v) {
-
             ['diag', 'wiki', 'comm'].forEach(id => {
-
                 const el = document.getElementById(`view-${id}`);
-
-                if (el) { el.classList.add('hidden'); el.classList.add('opacity-0'); }
-
                 const nav = document.getElementById(`nav-${id}`);
-
-                if (nav) nav.classList.remove('nav-active', 'text-black');
-
+                el.classList.add('hidden', 'opacity-0');
+                nav.classList.remove('nav-active');
+                nav.classList.add('text-gray-400');
             });
-
             const target = document.getElementById(`view-${v}`);
-
             target.classList.remove('hidden');
-
             setTimeout(() => target.classList.remove('opacity-0'), 50);
-
-            document.getElementById(`nav-${v}`).classList.add('nav-active', 'text-black');
-
+            document.getElementById(`nav-${v}`).classList.add('nav-active');
+            document.getElementById(`nav-${v}`).classList.remove('text-gray-400');
         }
 
+        function selectEmotion(type, color) {
+            currentSelected = type;
+            document.body.style.backgroundColor = color;
+            document.getElementById('btn-submit').classList.remove('hidden');
+            document.querySelectorAll('[id^="icon-"]').forEach(el => {
+                el.classList.remove('scale-125', 'border-black', 'border-2');
+                el.classList.add('border-black/5');
+            });
+            const active = document.getElementById(`icon-${type}`);
+            active.classList.remove('border-black/5');
+            active.classList.add('scale-125', 'border-black', 'border-2');
+        }
 
+        function startDiagnosis() {
+            const overlay = document.getElementById('thinking-overlay');
+            const status = document.getElementById('thinking-status');
+            overlay.classList.remove('hidden');
+            const steps = ["审五志", "辨时辰", "观五行", "定经络", "取良方"];
+            let i = 0;
+            const timer = setInterval(() => {
+                status.innerText = steps[i % steps.length];
+                i++;
+            }, 600);
+            setTimeout(() => {
+                clearInterval(timer);
+                overlay.classList.add('hidden');
+                showResult();
+            }, 3200);
+        }
 
         function showResult() {
-
             const data = EMOTIONS[currentSelected];
-
+            const now = new Date();
             document.getElementById('res-title').innerText = data.title;
-
-            document.getElementById('res-science').innerHTML = data.science;
-
-            document.getElementById('res-food-title').innerText = data.food;
-
-            document.getElementById('res-breath-title').innerText = data.breath;
-
-            document.getElementById('res-move-title').innerText = data.move;
-
-            document.getElementById('res-still-title').innerText = data.still;
-
+            document.getElementById('res-date').innerText = now.getFullYear() + "." + (now.getMonth()+1) + "." + now.getDate();
+            
+            const body = document.getElementById('res-body');
+            body.innerHTML = `
+                <div class="bg-gray-50 p-6 rounded-2xl border-l-4 border-black">
+                    <h5 class="text-[11px] font-black text-red-700 mb-2">【病理溯源】</h5>
+                    <p class="text-[11px] leading-relaxed italic text-gray-600">${data.science}</p>
+                </div>
+                <div class="grid grid-cols-1 gap-6">
+                    ${[['食·归经', data.food], ['息·吐纳', data.breath], ['动·经穴', data.move], ['静·守神', data.still]].map(item => `
+                        <div class="border-b border-black/5 pb-2">
+                            <p class="text-[9px] font-bold text-gray-400 uppercase mb-1">${item[0]}</p>
+                            <p class="text-lg font-serif font-black">${item[1]}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="p-4 bg-red-50 text-[10px] text-red-800 leading-relaxed rounded-xl">
+                    <strong>提示：</strong>${data.caution}
+                </div>
+            `;
             document.getElementById('stage-result').classList.remove('hidden');
-
         }
-
-
 
         function closeResult() { document.getElementById('stage-result').classList.add('hidden'); }
 
-
-
         function updateClock() {
-
             const now = new Date();
-
             const h = now.getHours();
-
             document.getElementById('nav-time').innerText = now.toTimeString().split(' ')[0];
-
             const idx = Math.floor(((h + 1) % 24) / 2);
-
-            document.getElementById('main-compass').style.transform = `rotate(${-(idx * 30)}deg)`;
-
+            const mainCompass = document.getElementById('main-compass');
+            if (mainCompass) mainCompass.style.transform = `rotate(${-(idx * 30)}deg)`;
         }
 
-
+        // Ink Animation
+        let particles = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        function animateInk() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            if(particles.length < 20) particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                s: Math.random() * 60 + 20,
+                o: Math.random() * 0.05,
+                vx: (Math.random()-0.5)*0.3,
+                vy: (Math.random()-0.5)*0.3
+            });
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.s, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(0,0,0,${p.o})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(animateInk);
+        }
 
         window.onload = init;
-
     </script>
-
 </body>
-
 </html>
