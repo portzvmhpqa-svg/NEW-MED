@@ -173,6 +173,56 @@
                 </div>
             </div>
 
+            <!-- Age Selector -->
+            <p class="text-sm font-bold tracking-widest text-gray-500 mb-6">— 敢问年岁 —</p>
+            <div class="flex gap-4 md:gap-8 mb-10">
+                <button onclick="selectDemographic(this, 'age')" class="age-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">童</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">1-12岁</span>
+                </button>
+                <button onclick="selectDemographic(this, 'age')" class="age-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">少</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">12-28岁</span>
+                </button>
+                <button onclick="selectDemographic(this, 'age')" class="age-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">壮</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">28-45岁</span>
+                </button>
+                <button onclick="selectDemographic(this, 'age')" class="age-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">耆</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">45岁+</span>
+                </button>
+            </div>
+
+            <!-- Gender Selector -->
+            <p class="text-sm font-bold tracking-widest text-gray-500 mb-6">— 阴阳辨识 —</p>
+            <div class="flex gap-4 md:gap-8 mb-14">
+                <button onclick="selectDemographic(this, 'gender')" class="gender-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">乾</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">男</span>
+                </button>
+                <button onclick="selectDemographic(this, 'gender')" class="gender-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-xl border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">坤</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">女</span>
+                </button>
+                <button onclick="selectDemographic(this, 'gender')" class="gender-btn flex flex-col items-center group w-14">
+                    <div class="w-14 h-14 rounded-full glass-panel flex items-center justify-center text-sm font-bold border-2 border-transparent group-hover:border-[#1a1a1a] transition-all text-[#1a1a1a] opacity-40 filter grayscale">混沌</div>
+                    <span class="text-[10px] mt-3 tracking-widest text-gray-400">无性别</span>
+                </button>
+            </div>
+
+            <script>
+                function selectDemographic(btn, type) {
+                    document.querySelectorAll('.' + type + '-btn > div').forEach(div => {
+                        div.classList.add('opacity-40', 'grayscale');
+                        div.classList.remove('opacity-100', 'grayscale-0', 'border-[#1a1a1a]', 'scale-110');
+                    });
+                    const inner = btn.querySelector('div');
+                    inner.classList.remove('opacity-40', 'grayscale');
+                    inner.classList.add('opacity-100', 'grayscale-0', 'border-[#1a1a1a]', 'scale-110');
+                }
+            </script>
+
             <!-- Emotion Selector -->
             <p class="text-sm font-bold tracking-widest text-gray-500 mb-8">此刻心境如何？</p>
             <div class="flex gap-4 md:gap-8 mb-12">
