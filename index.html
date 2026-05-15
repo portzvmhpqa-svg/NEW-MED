@@ -82,7 +82,7 @@
         .emotion-active { transform: scale(1.25) translateY(-15px); }
         .emotion-inactive { opacity: 0.3; filter: grayscale(100%); }
 
-        /* Loading Animation (Revised to subtle vertical slide) */
+        /* Loading Animation */
         @keyframes diag-flash {
             0% { opacity: 0; transform: translateY(10px); }
             30% { opacity: 1; transform: translateY(0); }
@@ -213,6 +213,7 @@
 
             <script>
                 function selectDemographic(btn, type) {
+                    // 只针对当前 type 的选项进行重置，不会影响另一种 type 的选项
                     document.querySelectorAll('.' + type + '-btn > div').forEach(div => {
                         div.classList.add('opacity-40', 'grayscale');
                         div.classList.remove('opacity-100', 'grayscale-0', 'border-[#1a1a1a]', 'scale-110');
@@ -220,6 +221,11 @@
                     const inner = btn.querySelector('div');
                     inner.classList.remove('opacity-40', 'grayscale');
                     inner.classList.add('opacity-100', 'grayscale-0', 'border-[#1a1a1a]', 'scale-110');
+                    
+                    // 触发轻微转动效果 (给八卦阵一点动力加速度)
+                    if(typeof baguaVel !== 'undefined') {
+                        baguaVel = 1.5; // 轻微扰动
+                    }
                 }
             </script>
 
@@ -412,7 +418,7 @@
         ];
 
         const EMOTIONS = {
-            anger: { key: 'anger', name: '怒', fontColor: '#52c41a', bgColor: '#e8f5e9', organIndex: 1 /*丑 肝*/, data: {
+            anger: { key: 'anger', name: '怒', fontColor: '#52c41a', bgColor: '#e8f5e9', organIndex: 1, data: {
                 title: "疏肝解郁方", science: "肝主怒，性喜条达。郁则化火。此方引火下行，以清香化积。",
                 foodTitle: "玫瑰白芍饮", foodDesc: "玫瑰理气，白芍养血柔肝。建议水温85℃，闷泡3分钟，闻其清香以舒缓嗅觉神经。",
                 breathTitle: "角调 · 缓呼长吸", breathDesc: "呼气时长约为吸气的两倍，想象浊气从两肋随气流排出。",
@@ -420,7 +426,7 @@
                 stillTitle: "赤足立于草木间", stillDesc: "练习“足心接地”。通过接触自然导体，释放体内积压的静电荷（生物电流平衡），缓解焦虑感。",
                 tips: "提示: 忌子时熬夜，避免辛辣刺激。", ext: "扩展: 肝经在丑时（1-3点）最旺，此时深睡利于肝血推陈出新。"
             }},
-            joy: { key: 'joy', name: '喜', fontColor: '#ff4d4f', bgColor: '#fde8e8', organIndex: 6 /*午 心*/, data: {
+            joy: { key: 'joy', name: '喜', fontColor: '#ff4d4f', bgColor: '#fde8e8', organIndex: 6, data: {
                 title: "宁心固神方", science: "喜伤心，气涣而不收。此方平顺血脉，化虚亢为定力。",
                 foodTitle: "百合莲子清心汤", foodDesc: "百合清心安神，莲子（带芯）清心火。建议午后服用，稳定心率。",
                 breathTitle: "徵调 · 平稳鼻息", breathDesc: "保持呼吸频率均匀，如同蚕丝般绵长不绝，安定心神。",
@@ -428,7 +434,7 @@
                 stillTitle: "合目内观心火", stillDesc: "闭目坐定，想象胸腔内的一团燥热红光逐渐缩小为一颗微弱而恒定的火种，归位。",
                 tips: "提示: 保持情绪稳定，少食兴奋性饮品。", ext: "扩展: 避免深夜观看高强度视听内容，防止“神散”。"
             }},
-            worry: { key: 'worry', name: '思', fontColor: '#1890ff', bgColor: '#e3f2fd', organIndex: 5 /*巳 脾*/, data: {
+            worry: { key: 'worry', name: '思', fontColor: '#1890ff', bgColor: '#e3f2fd', organIndex: 5, data: {
                 title: "理中健脾方", science: "思伤脾，气结于中。以厚土之音化解执念，健运脾胃。",
                 foodTitle: "陈皮山药健脾散", foodDesc: "陈皮理气导滞，山药益气健脾。适合搭配温水，小口慢咽。",
                 breathTitle: "宫调 · 腹式深息", breathDesc: "吸气时感受腹部隆起，将能量沉至中焦，通过物理按摩促进肠胃蠕动。",
@@ -436,7 +442,7 @@
                 stillTitle: "静听土音钟磬", stillDesc: "聆听低频、厚重的乐音（如大提琴、编钟），其频率能产生“接纳”心理暗示。",
                 tips: "提示: 规律饮食，少食生冷，避免久坐。", ext: "扩展: “思则气结”，每久坐1小时需起立行走百步以散气。"
             }},
-            sorrow: { key: 'sorrow', name: '忧', fontColor: '#faad14', bgColor: '#fef0d9', organIndex: 2 /*寅 肺*/, data: {
+            sorrow: { key: 'sorrow', name: '忧', fontColor: '#faad14', bgColor: '#fef0d9', organIndex: 2, data: {
                 title: "宣肺解忧方", science: "忧伤肺，气消而不张。利用金石之音宣发，如云开月明。",
                 foodTitle: "雪梨川贝润肺露", foodDesc: "雪梨滋阴，川贝止咳清心。可缓解忧郁导致的胸闷、气短。",
                 breathTitle: "商调 · 开胸重吸", breathDesc: "采用扩胸姿势吸气，尽量增加肺活量，打破胸腔的“紧缩感”。",
@@ -444,7 +450,7 @@
                 stillTitle: "远眺空旷之处", stillDesc: "视野从近处的屏幕移向地平线，通过睫状肌调节放松大脑皮层的紧绷感。",
                 tips: "提示: 多晒太阳，参与集体活动，忌封闭。", ext: "扩展: 阳光能调节血清素水平，是物理意义上的“解忧剂”。"
             }},
-            fear: { key: 'fear', name: '恐', fontColor: '#2f54eb', bgColor: '#e0e7ff', organIndex: 9 /*酉 肾*/, data: {
+            fear: { key: 'fear', name: '恐', fontColor: '#2f54eb', bgColor: '#e0e7ff', organIndex: 9, data: {
                 title: "固肾定惊方", science: "恐伤肾，气陷而不举。此方纳气归根，稳固下焦，重塑安全感。",
                 foodTitle: "黑芝麻益智饮", foodDesc: "黑芝麻入肾。研磨成粉后温服，不仅补肾气，其油润质感能安定神经。",
                 breathTitle: "羽调 · 潜纳深息", breathDesc: "呼吸要沉。感觉每一次吸气都直达尾椎骨（气沉丹田），强化心理根基。",
@@ -517,12 +523,11 @@
 
         // --- 物理引擎相关：八卦阵 ---
         let baguaAngle = 0;
-        let baguaVel = 0.05; // 基础慢速自转
+        let baguaVel = 0.05; 
         const baguaBaseVel = 0.05;
         
         function animateBagua() {
             baguaAngle += baguaVel;
-            // 物理阻尼（摩擦力）：让高速度逐渐回归到基础速度
             baguaVel += (baguaBaseVel - baguaVel) * 0.03; 
             document.getElementById('bagua-ring').style.transform = `rotate(${baguaAngle}deg)`;
             requestAnimationFrame(animateBagua);
@@ -537,8 +542,6 @@
             renderPosts();
             updateClock();
             setInterval(updateClock, 1000);
-            
-            // 启动八卦阵旋转循环
             requestAnimationFrame(animateBagua);
         }
 
@@ -549,11 +552,9 @@
             const s = now.getSeconds().toString().padStart(2, '0');
             document.getElementById('global-clock').innerText = `${h.toString().padStart(2, '0')}:${m}:${s}`;
             
-            // 罗盘红色指针随当前时辰转动，并且要加上罗盘本身的旋转圈数避免断档
             const shichenIndex = Math.floor(((h + 1) % 24) / 2);
             document.getElementById('pointer-time').style.transform = `translateX(-50%) rotate(${shichenIndex * 30 + compassSpins * 360}deg)`;
             
-            // 初始化黑色指针 (未点选状态下保持默认)
             if(!currentSelectedEmotion) {
                 document.getElementById('pointer-organ').style.transform = `translateX(-50%) rotate(${shichenIndex * 30}deg)`;
             }
@@ -563,7 +564,6 @@
             const ring = document.getElementById('compass-ring');
             const baguaRing = document.getElementById('bagua-ring');
             
-            // 八卦 (外圈)
             BAGUAS.forEach((b, i) => {
                 const el = document.createElement('div');
                 el.className = 'absolute text-gray-400 font-serif bagua-item text-xl';
@@ -571,7 +571,6 @@
                 el.innerText = b;
                 baguaRing.appendChild(el);
             });
-            // 时辰 (内圈)
             SHICHENS.forEach((s, i) => {
                 const el = document.createElement('div');
                 el.className = 'absolute text-[10px] text-gray-500 font-serif font-bold';
@@ -582,7 +581,6 @@
             });
         }
 
-        // --- 视图切换 ---
         function switchView(viewId) {
             ['diag', 'wiki', 'comm'].forEach(id => {
                 document.getElementById(`view-${id}`).classList.add('hidden-stage');
@@ -590,7 +588,6 @@
             });
             document.getElementById(`view-${viewId}`).classList.remove('hidden-stage');
             document.getElementById(`nav-${viewId}`).classList.add('nav-active');
-            // 回归白底
             if(viewId !== 'diag') {
                 document.documentElement.style.setProperty('--bg-current', 'var(--pure-white)');
             } else if(currentSelectedEmotion) {
@@ -598,15 +595,11 @@
             }
         }
 
-        // --- 情绪选择逻辑 (触发动画体系) ---
         function selectEmotion(emoKey) {
             currentSelectedEmotion = emoKey;
             const config = EMOTIONS[emoKey];
-            
-            // 1. 变更整体环境色
             document.documentElement.style.setProperty('--bg-current', config.bgColor);
             
-            // 2. 更新底部按钮激活状态
             document.querySelectorAll('.emotion-btn').forEach(btn => {
                 btn.classList.remove('emotion-active');
                 btn.classList.add('emotion-inactive');
@@ -622,28 +615,20 @@
             activeInner.style.color = config.fontColor;
             activeInner.classList.add('font-xinwei');
 
-            // 3. 给八卦阵施加巨大的加速度
             baguaVel = 8; 
-
-            // 4. 让内圈主罗盘顺时针额外旋转一周 (360度)
             compassSpins++;
             document.getElementById('compass-ring').style.setProperty('--rot', `${compassSpins * 360}deg`);
 
-            // 5. 黑色指针跟随转动，最终指到精准的中医穴位所在角度
-            // 为避免指涉倒转，在基础指度上加上旋转的整圈数
             const targetAngle = config.organIndex * 30 + (compassSpins * 360);
             document.getElementById('pointer-organ').style.transform = `translateX(-50%) rotate(${targetAngle}deg)`;
             
-            // 同时，刷新一下当前时间指针（红色），让它跟上内罗盘的旋转体系
             updateClock();
 
-            // 6. 显示“生成处方”按钮
             const submitBtn = document.getElementById('btn-submit');
             submitBtn.classList.remove('opacity-0', 'scale-50', 'pointer-events-none');
             submitBtn.classList.add('opacity-100', 'scale-100');
         }
 
-        // --- 生成处方 & Loading动效 ---
         function generatePrescription() {
             const loading = document.getElementById('stage-loading');
             const textEl = document.getElementById('loading-text');
@@ -660,7 +645,7 @@
                 i++;
                 if(i < texts.length) {
                     textEl.classList.remove('diag-text-anim');
-                    void textEl.offsetWidth; // 触发浏览器重排，重新播放动画
+                    void textEl.offsetWidth; 
                     textEl.innerText = texts[i];
                     textEl.classList.add('diag-text-anim');
                 } else {
@@ -686,7 +671,6 @@
             document.getElementById('res-still-desc').innerText = data.stillDesc;
             document.getElementById('res-tips').innerText = data.tips;
             document.getElementById('res-ext').innerText = data.ext;
-            
             document.getElementById('stage-result').classList.remove('hidden');
         }
 
@@ -694,7 +678,6 @@
             document.getElementById('stage-result').classList.add('hidden');
         }
 
-        // --- 百科与辟谣逻辑 (加入 Accordion 手风琴折叠) ---
         function renderWiki() {
             const container = document.getElementById('wiki-chapters');
             container.innerHTML = WIKI_DB.map(ch => `
@@ -749,7 +732,6 @@
             renderRumors(val);
         }
 
-        // --- 同修圆论坛逻辑 ---
         function renderPosts() {
             const container = document.getElementById('posts-container');
             container.innerHTML = POSTS.map((p, i) => `
@@ -784,13 +766,12 @@
         }
 
         function likePost(index, btnEl) {
-            if (btnEl.classList.contains('text-[#d92d20]')) return; // already liked
+            if (btnEl.classList.contains('text-[#d92d20]')) return; 
             POSTS[index].likes += 1;
             btnEl.classList.add('text-[#d92d20]');
             btnEl.querySelector('span').innerText = POSTS[index].likes;
         }
 
-        // --- 水墨粒子背景动效 (Ink Canvas Engine) ---
         function initInkCanvas() {
             const canvas = document.getElementById('ink-canvas');
             const ctx = canvas.getContext('2d');
@@ -804,7 +785,7 @@
             resize();
 
             const particles = [];
-            const centerX = w + 100; // 螺旋中心在画面右侧外
+            const centerX = w + 100; 
             const centerY = h / 2;
 
             for(let i=0; i<150; i++) {
@@ -818,23 +799,17 @@
             }
 
             function draw() {
-                // 极低透明度清空画布，形成水墨晕染拖尾
                 ctx.fillStyle = 'rgba(253, 253, 253, 0.05)';
                 ctx.fillRect(0, 0, w, h);
-
-                ctx.fillStyle = 'rgba(26, 26, 26, 0.05)'; // 黑色粒子
+                ctx.fillStyle = 'rgba(26, 26, 26, 0.05)'; 
                 particles.forEach(p => {
                     p.theta -= p.speed;
-                    // 阿基米德螺旋 r = a + b * theta
                     const r = p.a + p.b * p.theta;
                     const x = centerX - r * Math.cos(p.theta);
                     const y = centerY + r * Math.sin(p.theta);
-                    
                     ctx.beginPath();
                     ctx.arc(x, y, p.size, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // 重置
                     if(p.theta < 0) p.theta = Math.PI * 10;
                 });
                 requestAnimationFrame(draw);
